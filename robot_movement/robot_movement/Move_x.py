@@ -97,8 +97,8 @@ class MoveXActionServer(Node):
         # Extract target distance from goal request
         target_distance = goal_handle.request.target_distance    
         
-        # Use requested speed or set default speed if zero
-        speed = goal_handle.request.speed if goal_handle.request.speed != 0.0 else 0.2
+        # Set movement speed locally to 1.0
+        speed = 1.0  
         
         # Record starting position
         start_x = self.current_x
