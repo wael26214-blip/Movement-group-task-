@@ -1,4 +1,5 @@
 import time
+import math
 import rclpy
 from rclpy.node import Node
 from rclpy.action import ActionServer
@@ -39,8 +40,9 @@ class MoveXActionServer(Node):
             10
         )
 
-        # Variable to track the robot's current position on the X axis
+        # Variables to track the robot's current position on the X axis
         self.current_x = 0.0
+        self.current_y = 0.0
         
         # Create Service Server to handle manual stop requests
         self.srv = self.create_service(
@@ -89,8 +91,9 @@ class MoveXActionServer(Node):
     def odom_callback(self, msg):
         # Store current X position from incoming odometry message
         self.current_x = msg.pose.pose.position.x
+        self.current_y = msg.pose.pose.position.y
 
-    # Main action server callback function to execute linear movement towards target distance
+   # Main action server callback function to execute linear movement towards target distance
     def execute_callback(self, goal_handle):
         self.get_logger().info('Executing goal: Moving forward...')
         
@@ -102,6 +105,7 @@ class MoveXActionServer(Node):
         
         # Record starting position
         start_x = self.current_x
+        start_y = self.current_y
         
         # Initialize feedback message container
         feedback_msg = MoveX.Feedback()
@@ -110,10 +114,13 @@ class MoveXActionServer(Node):
         twist = Twist()
         twist.linear.x = speed
 
+        # Initialize distance_traveled variable before loop
+        distance_traveled = 0.0
+
         # Control loop: Keep moving while node is active and target distance is not reached
-        while rclpy.ok() and (abs(self.current_x - start_x) < target_distance):
-            # Calculate total distance traveled so far
-            distance_traveled = abs(self.current_x - start_x)
+        while rclpy.ok() and (distance_traveled < target_distance):
+            # Calculate total distance traveled so far using Euclidean distance
+            distance_traveled = math.sqrt((self.current_x - start_x) ** 2 + (self.current_y - start_y) ** 2)
 
             # Publish current feedback to client
             feedback_msg.current_distance_traveled = distance_traveled
@@ -147,10 +154,9 @@ class MoveXActionServer(Node):
         # Prepare and return final result
         result = MoveX.Result()
         result.success = True
-        result.final_distance = abs(self.current_x - start_x)
+        result.final_distance = distance_traveled  # استخدام المسافة الحقيقية المحسوبة
         self.get_logger().info(f'Target distance reached: {result.final_distance:.2f}m')
         return result
-
 
 # Main function to initialize ROS 2 communication, create node, and spin execution
 def main():
