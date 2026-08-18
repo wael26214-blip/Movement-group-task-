@@ -1,7 +1,6 @@
 #goal
 
 float32 target_distance
-float32 speed
 
 ---
 #result
